@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"os"
@@ -14,6 +15,7 @@ import (
 const GIT = "./tools/git/bin/git"
 const PANDOC = "./tools/pandoc"
 const REPO = "./paolo-sernini/src/pages/scrittura/post/"
+const JSON = "./paolo-sernini/src/pages/scrittura/posts.json"
 
 func main() {
 	if err := downloadRepo(); err != nil {
@@ -29,7 +31,14 @@ func main() {
 		if err := convert(file); err != nil {
 			log.Panic(err)
 		}
-		if err := addHeading(file); err != nil {
+
+		date := time.Now()
+
+		if err := addHeading(file, date); err != nil {
+			log.Panic(err)
+		}
+
+		if err := editJSON(file, date); err != nil {
 			log.Panic(err)
 		}
 	}
@@ -108,8 +117,8 @@ func deleteRepo() error {
 }
 
 //Add the Astro markdown heading at the top of a markdown file
-func addHeading(fileName string) error {
-	path := REPO+fileName+".md"
+func addHeading(fileName string, date time.Time) error {
+	path := REPO + fileName + ".md"
 	// Read the file contents into a string
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -118,7 +127,7 @@ func addHeading(fileName string) error {
 	content := string(data)
 
 	// Add new text at the top
-	newText := "---\n\nlayout: ../../../layouts/Post.astro\n\ntitle: \"" + fileName + "\"\n\ndate: \""+time.Now().Format(time.RFC3339)+"\"\n\n---\n\n"
+	newText := "---\n\nlayout: ../../../layouts/Post.astro\n\ntitle: \"" + fileName + "\"\n\ndate: \"" + date.Format(time.RFC3339) + "\"\n\n---\n\n"
 	content = newText + content
 
 	// Write the modified content back to the file
@@ -126,6 +135,53 @@ func addHeading(fileName string) error {
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func editJSON(fileName string, date time.Time) error {
+	// Define a struct type to represent an entry
+	type Entry struct {
+		Title string `json:"title"`
+		Date  string `json:"date"`
+	}
+
+    fileBytes, err := os.ReadFile(JSON)
+    if err != nil {
+        return err
+    }
+
+	var entries []Entry
+	err = json.Unmarshal(fileBytes, &entries)
+	if err != nil {
+		return err
+	}
+
+	found := false
+	// Iterate over the entries and read their values
+	for _, entry := range entries {
+		if fileName == entry.Title {
+			entry.Date = date.Format(time.RFC3339)
+			found = true
+		}
+	}
+
+	if !found {
+		// Add a new entry to the array
+		newEntry := Entry{Title: fileName, Date: date.Format(time.RFC3339)}
+		entries = append(entries, newEntry)
+	}
+
+	// write updated data back to file
+    fileBytes, err = json.Marshal(entries)
+    if err != nil {
+		return err
+    }
+
+    err = ioutil.WriteFile(JSON, fileBytes, 0644)
+    if err != nil {
+		return err
+    }
 
 	return nil
 }
