@@ -43,9 +43,13 @@ func main() {
 		}
 	}
 
-	// if err := deleteRepo(); err != nil {
-	// 	log.Panic(err)
-	// }
+	if err := commit(); err != nil {
+		log.Panic(err)
+	}
+
+	if err := deleteRepo(); err != nil {
+		log.Panic(err)
+	}
 }
 
 //Return a slice of all the .docx documents in the calling directory
@@ -181,6 +185,64 @@ func editJSON(fileName string, date time.Time) error {
     err = ioutil.WriteFile(JSON, fileBytes, 0644)
     if err != nil {
 		return err
+    }
+
+	return nil
+}
+
+func commit() error {
+	// set the working directory to the subfolder
+    cmd := exec.Command("git", "config", "--global", "user.name", "Paolo Sernini")
+    cmd.Dir = REPO
+    err := cmd.Run()
+    if err != nil {
+        return err
+    }
+
+    cmd = exec.Command("git", "config", "--global", "user.email", "tommy.ornato@gmail.com")
+    cmd.Dir = REPO
+    err = cmd.Run()
+    if err != nil {
+        return err
+    }
+
+    // run git add
+    cmd = exec.Command("git", "add", ".")
+    cmd.Dir = REPO
+    err = cmd.Run()
+    if err != nil {
+        return err
+    }
+
+    // run git commit
+    cmd = exec.Command("git", "commit", "-m", "Updating posts")
+    cmd.Dir = REPO
+    err = cmd.Run()
+    if err != nil {
+        return err
+    }
+
+	token, err := getToken()
+	if err != nil {
+		return err
+	}
+
+    // set up authentication with GitHub token
+    cmd = exec.Command("git", "remote", "set-url", "origin", token+"@github.com/ornato-t/paolo-sernini.git")
+    cmd.Dir = REPO
+    err = cmd.Run()
+    if err != nil {
+        return err
+    }
+
+	//Crashes sometimes after this point
+
+    // run git push
+    cmd = exec.Command("git", "push")
+    cmd.Dir = REPO
+    err = cmd.Run()
+    if err != nil {
+        return err
     }
 
 	return nil
