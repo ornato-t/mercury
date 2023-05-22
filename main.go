@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -28,11 +29,14 @@ func main() {
 		if err := convert(file); err != nil {
 			log.Panic(err)
 		}
+		if err := addHeading(file); err != nil {
+			log.Panic(err)
+		}
 	}
 
-	if err := deleteRepo(); err != nil {
-		log.Panic(err)
-	}
+	// if err := deleteRepo(); err != nil {
+	// 	log.Panic(err)
+	// }
 }
 
 //Return a slice of all the .docx documents in the calling directory
@@ -77,16 +81,16 @@ func downloadRepo() error {
 }
 
 //Reads a github token from the .env file
-func getToken() (string, error){
-    // Load the .env file
-    err := godotenv.Load()
-    if err != nil {
+func getToken() (string, error) {
+	// Load the .env file
+	err := godotenv.Load()
+	if err != nil {
 		return "", err
-    }
+	}
 
-    // Access a value using os.Getenv
-    value := os.Getenv("TOKEN")
-    return value, err
+	// Access a value using os.Getenv
+	value := os.Getenv("TOKEN")
+	return value, err
 }
 
 //Delete the repo once all changes have been made
@@ -96,6 +100,29 @@ func deleteRepo() error {
 
 	// Delete the directory and its contents
 	err := os.RemoveAll(dir)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//Add the Astro markdown heading at the top of a markdown file
+func addHeading(fileName string) error {
+	path := REPO+fileName+".md"
+	// Read the file contents into a string
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	content := string(data)
+
+	// Add new text at the top
+	newText := "---\n\nlayout: ../../../layouts/Post.astro\n\ntitle: \"" + fileName + "\"\n\ndate: \""+time.Now().Format(time.RFC3339)+"\"\n\n---\n\n"
+	content = newText + content
+
+	// Write the modified content back to the file
+	err = ioutil.WriteFile(path, []byte(content), 0644)
 	if err != nil {
 		return err
 	}
