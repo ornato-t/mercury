@@ -237,6 +237,14 @@ func commit() error {
 
 	//Crashes sometimes after this point
 
+	/*
+		fatal: 'TOKEN@github.com/ornato-t/paolo-sernini.git' does not appear to be a git repository
+		fatal: Could not read from remote repository.
+
+		Please make sure you have the correct access rights
+		and the repository exists.
+	*/
+
     // run git push
     cmd = exec.Command("git", "push")
     cmd.Dir = REPO
