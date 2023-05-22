@@ -192,14 +192,14 @@ func editJSON(fileName string, date time.Time) error {
 
 func commit() error {
 	// set the working directory to the subfolder
-    cmd := exec.Command("git", "config", "--global", "user.name", "Paolo Sernini")
+    cmd := exec.Command(GIT, "config", "--global", "user.name", "Paolo Sernini")
     cmd.Dir = REPO
     err := cmd.Run()
     if err != nil {
         return err
     }
 
-    cmd = exec.Command("git", "config", "--global", "user.email", "tommy.ornato@gmail.com")
+    cmd = exec.Command(GIT, "config", "--global", "user.email", "tommy.ornato@gmail.com")
     cmd.Dir = REPO
     err = cmd.Run()
     if err != nil {
@@ -207,7 +207,7 @@ func commit() error {
     }
 
     // run git add
-    cmd = exec.Command("git", "add", ".")
+    cmd = exec.Command(GIT, "add", ".")
     cmd.Dir = REPO
     err = cmd.Run()
     if err != nil {
@@ -215,7 +215,7 @@ func commit() error {
     }
 
     // run git commit
-    cmd = exec.Command("git", "commit", "-m", "Updating posts")
+    cmd = exec.Command(GIT, "commit", "-m", "Updating posts")
     cmd.Dir = REPO
     err = cmd.Run()
     if err != nil {
@@ -228,14 +228,16 @@ func commit() error {
 	}
 
     // set up authentication with GitHub token
-    cmd = exec.Command("git", "remote", "set-url", "origin", token+"@github.com/ornato-t/paolo-sernini.git")
+    cmd = exec.Command(GIT, "remote", "set-url", "origin", token+"@github.com/ornato-t/paolo-sernini.git")
     cmd.Dir = REPO
     err = cmd.Run()
     if err != nil {
         return err
     }
 
-	//Crashes sometimes after this point
+	//Crashes sometimes after this point - EDIT: adding local git makes it crash at the first command - the path is now all wrong
+		// - open only the top folder
+		// - set new const with git path from that folder
 
 	/*
 		fatal: 'TOKEN@github.com/ornato-t/paolo-sernini.git' does not appear to be a git repository
@@ -246,7 +248,7 @@ func commit() error {
 	*/
 
     // run git push
-    cmd = exec.Command("git", "push")
+    cmd = exec.Command(GIT, "push")
     cmd.Dir = REPO
     err = cmd.Run()
     if err != nil {
