@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -11,6 +12,12 @@ import (
 
 	"github.com/joho/godotenv"
 )
+
+//go:embed tools/*
+var tools embed.FS
+
+//go:embed .env
+var envFile embed.FS
 
 const GIT = "./tools/git/bin/git"
 const PANDOC = "./tools/pandoc"
