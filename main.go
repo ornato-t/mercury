@@ -20,6 +20,12 @@ const REPO = "./paolo-sernini"
 const GIT_FROM_REPO = "./../tools/git/bin/git"
 
 func main() {
+	if folderExists() {
+		if err := deleteRepo(); err != nil {
+			log.Panic(err)
+		}
+	} 
+
 	if err := downloadRepo(); err != nil {
 		log.Panic(err)
 	}
@@ -230,22 +236,12 @@ func commit() error {
 	}
 
     // set up authentication with GitHub token
-    cmd = exec.Command(GIT_FROM_REPO, "remote", "set-url", "origin", token+"@github.com/ornato-t/paolo-sernini.git")
+    cmd = exec.Command(GIT_FROM_REPO, "remote", "set-url", "origin", "https://"+token+"@github.com/ornato-t/paolo-sernini.git")
     cmd.Dir = REPO
     err = cmd.Run()
     if err != nil {
         return err
     }
-
-	//Crashes sometimes after this point
-	
-	/*
-		fatal: 'TOKEN@github.com/ornato-t/paolo-sernini.git' does not appear to be a git repository
-		fatal: Could not read from remote repository.
-
-		Please make sure you have the correct access rights
-		and the repository exists.
-	*/
 
 	// run git push
     cmd = exec.Command(GIT_FROM_REPO, "push")
@@ -256,4 +252,12 @@ func commit() error {
     }
 
 	return nil
+}
+
+//Returns true if a folder of a certain name already exists
+func folderExists() bool {
+	folderName := "paolo-sernini"
+	_, err := os.Stat(folderName)
+
+	return !os.IsNotExist(err)
 }
