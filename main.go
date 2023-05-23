@@ -223,7 +223,7 @@ func commit() error {
     }
 
     // run git commit
-    cmd = exec.Command(GIT_FROM_REPO, "commit", "-m", "Updating posts")
+    cmd = exec.Command(GIT_FROM_REPO, "commit", "-m", "[Automated mercury commit] Updating posts")
     cmd.Dir = REPO
     err = cmd.Run()
     if err != nil {
