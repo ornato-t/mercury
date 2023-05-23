@@ -14,8 +14,10 @@ import (
 
 const GIT = "./tools/git/bin/git"
 const PANDOC = "./tools/pandoc"
-const REPO = "./paolo-sernini/src/pages/scrittura/post/"
+const MD_FOLDER = "./paolo-sernini/src/pages/scrittura/post/"
 const JSON = "./paolo-sernini/src/pages/scrittura/posts.json"
+const REPO = "./paolo-sernini"
+const GIT_FROM_REPO = "./../tools/git/bin/git"
 
 func main() {
 	if err := downloadRepo(); err != nil {
@@ -73,7 +75,7 @@ func findDocs() ([]string, error) {
 
 //Convert a slice of .docx documents to .md ones with the same name
 func convert(fileName string) error {
-	cmd := exec.Command(PANDOC, "-f", "docx", "-t", "markdown", fileName+".docx", "-o", REPO+fileName+".md")
+	cmd := exec.Command(PANDOC, "-f", "docx", "-t", "markdown", fileName+".docx", "-o", MD_FOLDER+fileName+".md")
 	err := cmd.Run()
 	if err != nil {
 		return err
@@ -122,7 +124,7 @@ func deleteRepo() error {
 
 //Add the Astro markdown heading at the top of a markdown file
 func addHeading(fileName string, date time.Time) error {
-	path := REPO + fileName + ".md"
+	path := MD_FOLDER + fileName + ".md"
 	// Read the file contents into a string
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -192,14 +194,14 @@ func editJSON(fileName string, date time.Time) error {
 
 func commit() error {
 	// set the working directory to the subfolder
-    cmd := exec.Command(GIT, "config", "--global", "user.name", "Paolo Sernini")
+    cmd := exec.Command(GIT_FROM_REPO, "config", "--global", "user.name", "Paolo Sernini")
     cmd.Dir = REPO
     err := cmd.Run()
     if err != nil {
         return err
     }
 
-    cmd = exec.Command(GIT, "config", "--global", "user.email", "tommy.ornato@gmail.com")
+    cmd = exec.Command(GIT_FROM_REPO, "config", "--global", "user.email", "tommy.ornato@gmail.com")
     cmd.Dir = REPO
     err = cmd.Run()
     if err != nil {
@@ -207,7 +209,7 @@ func commit() error {
     }
 
     // run git add
-    cmd = exec.Command(GIT, "add", ".")
+    cmd = exec.Command(GIT_FROM_REPO, "add", ".")
     cmd.Dir = REPO
     err = cmd.Run()
     if err != nil {
@@ -215,7 +217,7 @@ func commit() error {
     }
 
     // run git commit
-    cmd = exec.Command(GIT, "commit", "-m", "Updating posts")
+    cmd = exec.Command(GIT_FROM_REPO, "commit", "-m", "Updating posts")
     cmd.Dir = REPO
     err = cmd.Run()
     if err != nil {
@@ -228,17 +230,15 @@ func commit() error {
 	}
 
     // set up authentication with GitHub token
-    cmd = exec.Command(GIT, "remote", "set-url", "origin", token+"@github.com/ornato-t/paolo-sernini.git")
+    cmd = exec.Command(GIT_FROM_REPO, "remote", "set-url", "origin", token+"@github.com/ornato-t/paolo-sernini.git")
     cmd.Dir = REPO
     err = cmd.Run()
     if err != nil {
         return err
     }
 
-	//Crashes sometimes after this point - EDIT: adding local git makes it crash at the first command - the path is now all wrong
-		// - open only the top folder
-		// - set new const with git path from that folder
-
+	//Crashes sometimes after this point
+	
 	/*
 		fatal: 'TOKEN@github.com/ornato-t/paolo-sernini.git' does not appear to be a git repository
 		fatal: Could not read from remote repository.
@@ -247,8 +247,8 @@ func commit() error {
 		and the repository exists.
 	*/
 
-    // run git push
-    cmd = exec.Command(GIT, "push")
+	// run git push
+    cmd = exec.Command(GIT_FROM_REPO, "push")
     cmd.Dir = REPO
     err = cmd.Run()
     if err != nil {
