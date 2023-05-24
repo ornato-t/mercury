@@ -47,7 +47,11 @@ func main() {
 			log.Panic(err)
 		}
 
-		date := time.Now()
+		fileInfo, err := os.Stat("./"+file+".docx")
+		if err != nil {
+			log.Panic(err)
+		}
+		date := fileInfo.ModTime()
 
 		if err := addHeading(file, date); err != nil {
 			log.Panic(err)
