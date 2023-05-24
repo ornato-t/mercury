@@ -1,0 +1,1 @@
+Bundle to exe with `go build -o mercury`
