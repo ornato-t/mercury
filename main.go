@@ -9,24 +9,24 @@ import (
 	"os/exec"
 	"strings"
 	"time"
-
-	"github.com/joho/godotenv"
 )
 
-//go:embed tools/*
-var tools embed.FS
+//go:embed pandoc.exe
+var pandoc embed.FS
 
-//go:embed .env
+//go:embed env
 var envFile embed.FS
 
-const GIT = "./tools/git/bin/git"
-const PANDOC = "./tools/pandoc"
+const PANDOC = "./pandoc"
 const MD_FOLDER = "./paolo-sernini/src/pages/scrittura/post/"
 const JSON = "./paolo-sernini/src/pages/scrittura/posts.json"
 const REPO = "./paolo-sernini"
-const GIT_FROM_REPO = "./../tools/git/bin/git"
 
 func main() {
+	if err := installTools(); err != nil {
+		log.Panic(err)
+	}
+
 	if folderExists() {
 		if err := deleteRepo(); err != nil {
 			log.Panic(err)
@@ -65,6 +65,10 @@ func main() {
 	if err := deleteRepo(); err != nil {
 		log.Panic(err)
 	}
+
+	if err := uninstallTools(); err != nil {
+		log.Panic(err)
+	}
 }
 
 //Return a slice of all the .docx documents in the calling directory
@@ -99,7 +103,7 @@ func convert(fileName string) error {
 
 //Clone a git repo
 func downloadRepo() error {
-	cmd := exec.Command(GIT, "clone", "https://github.com/ornato-t/paolo-sernini")
+	cmd := exec.Command("git", "clone", "https://github.com/ornato-t/paolo-sernini")
 	err := cmd.Run()
 	if err != nil {
 		return err
@@ -110,15 +114,12 @@ func downloadRepo() error {
 
 //Reads a github token from the .env file
 func getToken() (string, error) {
-	// Load the .env file
-	err := godotenv.Load()
-	if err != nil {
-		return "", err
-	}
+	data, err := envFile.ReadFile("env")
+    if err != nil {
+        return "", err
+    }
 
-	// Access a value using os.Getenv
-	value := os.Getenv("TOKEN")
-	return value, err
+	return string(data), nil
 }
 
 //Delete the repo once all changes have been made
@@ -158,6 +159,7 @@ func addHeading(fileName string, date time.Time) error {
 	return nil
 }
 
+//Update the Astro json file recording all mardown documents - TODO: only run if any git changes have been made
 func editJSON(fileName string, date time.Time) error {
 	// Define a struct type to represent an entry
 	type Entry struct {
@@ -205,16 +207,17 @@ func editJSON(fileName string, date time.Time) error {
 	return nil
 }
 
+//Commit any changes to a git repository
 func commit() error {
 	// set the working directory to the subfolder
-    cmd := exec.Command(GIT_FROM_REPO, "config", "--global", "user.name", "Paolo Sernini")
+    cmd := exec.Command("git", "config", "--global", "user.name", "Paolo Sernini")
     cmd.Dir = REPO
     err := cmd.Run()
     if err != nil {
         return err
     }
 
-    cmd = exec.Command(GIT_FROM_REPO, "config", "--global", "user.email", "tommy.ornato@gmail.com")
+    cmd = exec.Command("git", "config", "--global", "user.email", "tommy.ornato@gmail.com")
     cmd.Dir = REPO
     err = cmd.Run()
     if err != nil {
@@ -222,7 +225,7 @@ func commit() error {
     }
 
     // run git add
-    cmd = exec.Command(GIT_FROM_REPO, "add", ".")
+    cmd = exec.Command("git", "add", ".")
     cmd.Dir = REPO
     err = cmd.Run()
     if err != nil {
@@ -230,7 +233,7 @@ func commit() error {
     }
 
     // run git commit
-    cmd = exec.Command(GIT_FROM_REPO, "commit", "-m", "[Automated mercury commit] Updating posts")
+    cmd = exec.Command("git", "commit", "-m", "[Automated mercury commit] Updating posts")
     cmd.Dir = REPO
     err = cmd.Run()
     if err != nil {
@@ -243,7 +246,7 @@ func commit() error {
 	}
 
     // set up authentication with GitHub token
-    cmd = exec.Command(GIT_FROM_REPO, "remote", "set-url", "origin", "https://"+token+"@github.com/ornato-t/paolo-sernini.git")
+    cmd = exec.Command("git", "remote", "set-url", "origin", "https://"+token+"@github.com/ornato-t/paolo-sernini.git")
     cmd.Dir = REPO
     err = cmd.Run()
     if err != nil {
@@ -251,7 +254,7 @@ func commit() error {
     }
 
 	// run git push
-    cmd = exec.Command(GIT_FROM_REPO, "push")
+    cmd = exec.Command("git", "push")
     cmd.Dir = REPO
     err = cmd.Run()
     if err != nil {
@@ -267,4 +270,27 @@ func folderExists() bool {
 	_, err := os.Stat(folderName)
 
 	return !os.IsNotExist(err)
+}
+
+//Extracts and installs the required tools
+func installTools() error {
+	data, err := pandoc.ReadFile("pandoc.exe")
+    if err != nil {
+        return err
+    }
+    err = ioutil.WriteFile("pandoc.exe", data, os.ModePerm)
+    if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//Uninstall the temporarily installed tools
+func uninstallTools() error {
+	err := os.Remove("pandoc.exe")
+    if err != nil {
+        log.Fatal(err)
+    }
+	return nil
 }
